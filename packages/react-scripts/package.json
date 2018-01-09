@@ -1,8 +1,8 @@
 {
   "name": "li-react-scripts",
-  "version": "1.0.17",
+  "version": "0.0.1",
   "description": "Configuration and scripts for Create React App.",
-  "repository": "facebookincubator/create-react-app",
+  "repository": "colloquet/create-react-app",
   "license": "MIT",
   "engines": {
     "node": ">=6"
