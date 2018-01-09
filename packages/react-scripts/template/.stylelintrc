@@ -1,0 +1,14 @@
+{
+  "extends": "stylelint-config-standard",
+  "plugins": [
+    "stylelint-order"
+  ],
+  "rules": {
+    "number-leading-zero": "never",
+    "selector-pseudo-element-colon-notation": "single",
+    "selector-pseudo-class-no-unknown": [true, {
+      "ignorePseudoClasses": ["global"]
+    }],
+    "order/properties-alphabetical-order": true
+  }
+}

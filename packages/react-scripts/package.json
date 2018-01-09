@@ -1,6 +1,6 @@
 {
-  "name": "li-react-scripts",
-  "version": "0.0.2",
+  "name": "@colloque/react-scripts",
+  "version": "0.0.5",
   "description": "Configuration and scripts for Create React App.",
   "repository": "colloquet/create-react-app",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "node": ">=6"
   },
   "bugs": {
-    "url": "https://github.com/facebookincubator/create-react-app/issues"
+    "url": "https://github.com/colloquet/create-react-app/issues"
   },
   "files": [
     "bin",
