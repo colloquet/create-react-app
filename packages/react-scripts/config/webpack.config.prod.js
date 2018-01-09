@@ -395,3 +395,5 @@ const webpackConfig = {
     child_process: 'empty',
   },
 };
+
+module.exports = webpackConfig
