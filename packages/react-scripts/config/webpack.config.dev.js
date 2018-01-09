@@ -12,6 +12,8 @@ const autoprefixer = require('autoprefixer');
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const StyleLintPlugin = require('stylelint-webpack-plugin');
+const createResolver = require('postcss-import-webpack-resolver');
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 const InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
@@ -33,7 +35,7 @@ const env = getClientEnvironment(publicUrl);
 // This is the development configuration.
 // It is focused on developer experience and fast rebuilds.
 // The production configuration is different and lives in a separate file.
-module.exports = {
+const webpackConfig = {
   // You may want 'eval' instead if you prefer to see the compiled output in DevTools.
   // See the discussion in https://github.com/facebookincubator/create-react-app/issues/343.
   devtool: 'cheap-module-source-map',
@@ -104,6 +106,7 @@ module.exports = {
       // Support React Native Web
       // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
       'react-native': 'react-native-web',
+      '@': paths.appSrc,
     },
     plugins: [
       // Prevents users from importing files from outside of src/ (or node_modules/).
@@ -188,7 +191,10 @@ module.exports = {
               {
                 loader: require.resolve('css-loader'),
                 options: {
+                  localIdentName: '[name]__[local]___[hash:base64:5]',
                   importLoaders: 1,
+                  modules: 1,
+                  camelCase: 1,
                 },
               },
               {
@@ -199,6 +205,14 @@ module.exports = {
                   ident: 'postcss',
                   plugins: () => [
                     require('postcss-flexbugs-fixes'),
+                    require('postcss-import')({
+                      resolve: createResolver({
+                        alias: webpackConfig.resolve.alias,
+                        modules: ['src', 'node_modules'],
+                      }),
+                    }),
+                    require('postcss-simple-vars'),
+                    require('postcss-nested'),
                     autoprefixer({
                       browsers: [
                         '>1%',
@@ -236,6 +250,11 @@ module.exports = {
     ],
   },
   plugins: [
+    // Lint CSS
+    new StyleLintPlugin({
+      context: paths.appSrc,
+      files: ['**/*.css'],
+    }),
     // Makes some environment variables available in index.html.
     // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
     // <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
@@ -285,3 +304,5 @@ module.exports = {
     hints: false,
   },
 };
+
+module.exports = webpackConfig;

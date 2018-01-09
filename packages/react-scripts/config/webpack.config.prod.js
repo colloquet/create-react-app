@@ -12,7 +12,9 @@ const autoprefixer = require('autoprefixer');
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const StyleLintPlugin = require('stylelint-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const createResolver = require('postcss-import-webpack-resolver');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
@@ -20,6 +22,13 @@ const eslintFormatter = require('react-dev-utils/eslintFormatter');
 const ModuleScopePlugin = require('react-dev-utils/ModuleScopePlugin');
 const paths = require('./paths');
 const getClientEnvironment = require('./env');
+
+const date = new Date();
+const year = `${date.getFullYear()}`.slice(2);
+const month = `0${date.getMonth() + 1}`.slice(-2);
+const day = `0${date.getDate()}`.slice(-2);
+const trailing = `${Date.now() / Math.PI / 1e6}`.split('.')[1].slice(0, 4);
+const id = `${year}${month}${day}${trailing}`;
 
 // Webpack uses `publicPath` to determine where the app is being served from.
 // It requires a trailing slash, or the file assets will get an incorrect path.
@@ -43,7 +52,7 @@ if (env.stringified['process.env'].NODE_ENV !== '"production"') {
 }
 
 // Note: defined here because it will be used more than once.
-const cssFilename = 'static/css/[name].[contenthash:8].css';
+const cssFilename = `static/${id}/css/[name].css`;
 
 // ExtractTextPlugin expects the build output to be flat.
 // (See https://github.com/webpack-contrib/extract-text-webpack-plugin/issues/27)
@@ -57,7 +66,7 @@ const extractTextPluginOptions = shouldUseRelativeAssetPaths
 // This is the production configuration.
 // It compiles slowly and is focused on producing a fast and minimal bundle.
 // The development configuration is different and lives in a separate file.
-module.exports = {
+const webpackConfig = {
   // Don't attempt to continue if there are any errors.
   bail: true,
   // We generate sourcemaps in production. This is slow but gives good results.
@@ -71,8 +80,8 @@ module.exports = {
     // Generated JS file names (with nested folders).
     // There will be one main bundle, and one file per asynchronous chunk.
     // We don't currently advertise code splitting but Webpack supports it.
-    filename: 'static/js/[name].[chunkhash:8].js',
-    chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
+    filename: `static/${id}/js/[name].js`,
+    chunkFilename: `static/${id}/js/[name].chunk.js`,
     // We inferred the "public path" (such as / or /my-project) from homepage.
     publicPath: publicPath,
     // Point sourcemap entries to original disk location (format as URL on Windows)
@@ -110,6 +119,7 @@ module.exports = {
       // Support React Native Web
       // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
       'react-native': 'react-native-web',
+      '@': paths.appSrc,
     },
     plugins: [
       // Prevents users from importing files from outside of src/ (or node_modules/).
@@ -164,7 +174,7 @@ module.exports = {
             loader: require.resolve('url-loader'),
             options: {
               limit: 10000,
-              name: 'static/media/[name].[hash:8].[ext]',
+              name: `static/${id}/media/[name].[ext]`,
             },
           },
           // Process JS with Babel.
@@ -208,8 +218,12 @@ module.exports = {
                       loader: require.resolve('css-loader'),
                       options: {
                         importLoaders: 1,
-                        minimize: true,
+                        minimize: {
+                          // prevent lossy color minification
+                          colormin: false,
+                        },
                         sourceMap: shouldUseSourceMap,
+                        modules: true,
                       },
                     },
                     {
@@ -220,6 +234,14 @@ module.exports = {
                         ident: 'postcss',
                         plugins: () => [
                           require('postcss-flexbugs-fixes'),
+                          require('postcss-import')({
+                            resolve: createResolver({
+                              alias: webpackConfig.resolve.alias,
+                              modules: ['src', 'node_modules'],
+                            }),
+                          }),
+                          require('postcss-simple-vars'),
+                          require('postcss-nested'),
                           autoprefixer({
                             browsers: [
                               '>1%',
@@ -251,7 +273,7 @@ module.exports = {
             // by webpacks internal loaders.
             exclude: [/\.(js|jsx|mjs)$/, /\.html$/, /\.json$/],
             options: {
-              name: 'static/media/[name].[hash:8].[ext]',
+              name: `static/${id}/media/[name].[ext]`,
             },
           },
           // ** STOP ** Are you adding a new loader?
@@ -261,6 +283,12 @@ module.exports = {
     ],
   },
   plugins: [
+    // Lint CSS and fail on error
+    new StyleLintPlugin({
+      context: paths.appSrc,
+      files: ['**/*.css'],
+      failOnError: true,
+    }),
     // Makes some environment variables available in index.html.
     // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
     // <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
